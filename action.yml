@@ -1,0 +1,73 @@
+name: 'EnvGuard - Secret Scanner'
+description: 'Scan for exposed AI API keys and secrets in your code'
+author: 'Damilola Faith Ashiedu'
+
+branding:
+  icon: 'shield'
+  color: 'red'
+
+inputs:
+  path:
+    description: 'Path to scan (default: current directory)'
+    required: false
+    default: '.'
+  fail_on_found:
+    description: 'Fail the action if secrets are found'
+    required: false
+    default: 'true'
+
+outputs:
+  findings_count:
+    description: 'Number of exposed secrets found'
+    value: ${{ steps.scan.outputs.findings_count }}
+  scan_result:
+    description: 'Scan result (passed/failed)'
+    value: ${{ steps.scan.outputs.result }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Run EnvGuard Scanner
+      id: scan
+      shell: bash
+      run: |
+        # Download scanner
+        curl -O https://raw.githubusercontent.com/faythashiedu/AI_Secret_Scanner/main/aiEnvGuard.py
+        
+        # Run scan
+        python aiEnvGuard.py ${{ inputs.path }} || echo "SCAN_FAILED=true" >> $GITHUB_ENV
+        
+        # Set outputs
+        echo "result=${{ env.SCAN_FAILED == 'true' && 'failed' || 'passed' }}" >> $GITHUB_OUTPUT
+    
+    - name: Create Issue on Failure
+      if: env.SCAN_FAILED == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Exposed API Keys Detected!!!',
+            body: `EnvGuard detected exposed secrets in the repository.
+            
+            **Action Required:**
+            1. Review the scan results in the workflow logs
+            2. Move exposed keys to \`.env\` file
+            3. Add \`.env\` to \`.gitignore\`
+            4. Rotate compromised keys immediately
+            
+            See workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+          })
+    
+    - name: Fail if secrets found
+      if: inputs.fail_on_found == 'true' && env.SCAN_FAILED == 'true'
+      shell: bash
+      run: |
+        echo "Exposed secrets found! See scan results above."
+        exit 1

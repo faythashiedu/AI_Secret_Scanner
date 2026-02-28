@@ -1,0 +1,12 @@
+# EnvGuard Pre-commit Hook
+
+repos:
+  - repo: https://github.com/faythashiedu/AI_Secret_Scanner
+    rev: v1.0.0
+    hooks:
+      - id: envguard
+        name: EnvGuard Secret Scanner
+        entry: python aiEnvGuard.py
+        language: python
+        pass_filenames: false
+        always_run: true
