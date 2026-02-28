@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="envguard",
+    name="aisecretscanner",
     version="1.0.0",
     author="Damilola Faith Ashiedu",
     author_email="faithashiedu9@gmail.com",
@@ -30,7 +30,7 @@ setup(
     install_requires=[],  # No dependencies!
     entry_points={
         "console_scripts": [
-            "envguard=envguard:main",
+            "aisecretscanner=aiEnvGuard:main",
         ],
     },
     keywords="security api-keys secrets scanner ai ml openai anthropic claude slack aws github",
